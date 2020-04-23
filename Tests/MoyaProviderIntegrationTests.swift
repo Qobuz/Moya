@@ -2,8 +2,11 @@ import Quick
 import Nimble
 import OHHTTPStubs
 
+#if canImport(OHHTTPStubsSwift)
+import OHHTTPStubsSwift
+#endif
+
 @testable import Moya
-@testable import ReactiveMoya
 
 func beIdenticalToResponse(_ expectedValue: Moya.Response) -> Predicate<Moya.Response> {
     return Predicate { expression in
@@ -24,26 +27,26 @@ final class MoyaProviderIntegrationTests: QuickSpec {
         let zenMessage = String(data: GitHub.zen.sampleData, encoding: .utf8)
 
         beforeEach {
-            OHHTTPStubs.stubRequests(passingTest: {$0.url!.path == "/zen"}, withStubResponse: { _ in
-                return OHHTTPStubsResponse(data: GitHub.zen.sampleData, statusCode: 200, headers: nil)
+            HTTPStubs.stubRequests(passingTest: {$0.url!.path == "/zen"}, withStubResponse: { _ in
+                return HTTPStubsResponse(data: GitHub.zen.sampleData, statusCode: 200, headers: nil)
             })
 
-            OHHTTPStubs.stubRequests(passingTest: {$0.url!.path == "/users/ashfurrow"}, withStubResponse: { _ in
-                return OHHTTPStubsResponse(data: GitHub.userProfile("ashfurrow").sampleData, statusCode: 200, headers: nil)
+            HTTPStubs.stubRequests(passingTest: {$0.url!.path == "/users/ashfurrow"}, withStubResponse: { _ in
+                return HTTPStubsResponse(data: GitHub.userProfile("ashfurrow").sampleData, statusCode: 200, headers: nil)
             })
 
-            OHHTTPStubs.stubRequests(passingTest: {$0.url!.path == "/users/invalid"}, withStubResponse: { _ in
-                return OHHTTPStubsResponse(data: GitHub.userProfile("invalid").sampleData, statusCode: 400, headers: nil)
+            HTTPStubs.stubRequests(passingTest: {$0.url!.path == "/users/invalid"}, withStubResponse: { _ in
+                return HTTPStubsResponse(data: GitHub.userProfile("invalid").sampleData, statusCode: 400, headers: nil)
             })
 
-            OHHTTPStubs.stubRequests(passingTest: {$0.url!.path == "/basic-auth/user/passwd"}, withStubResponse: { _ in
-                return OHHTTPStubsResponse(data: HTTPBin.basicAuth.sampleData, statusCode: 200, headers: nil)
+            HTTPStubs.stubRequests(passingTest: {$0.url!.path == "/basic-auth/user/passwd"}, withStubResponse: { _ in
+                return HTTPStubsResponse(data: HTTPBin.basicAuth.sampleData, statusCode: 200, headers: nil)
             })
 
         }
 
         afterEach {
-            OHHTTPStubs.removeAllStubs()
+            HTTPStubs.removeAllStubs()
         }
 
         describe("valid endpoints") {
@@ -261,44 +264,6 @@ final class MoyaProviderIntegrationTests: QuickSpec {
                         expect(log.lowercased()).to(contain("{ status code: 200, headers"))
                         expect(log.lowercased()).to(contain("\"content-length\""))
                     }
-                }
-            }
-
-            describe("a reactive provider with SignalProducer") {
-                var provider: MoyaProvider<GitHub>!
-                beforeEach {
-                    provider = MoyaProvider<GitHub>()
-                }
-
-                it("returns some data for zen request") {
-                    var message: String?
-
-                    waitUntil { done in
-                        provider.reactive.request(.zen).startWithResult { result in
-                            if case .success(let response) = result {
-                                message = String(data: response.data, encoding: String.Encoding.utf8)
-                                done()
-                            }
-                        }
-                    }
-
-                    expect(message) == zenMessage
-                }
-
-                it("returns some data for user profile request") {
-                    var message: String?
-
-                    waitUntil { done in
-                        let target: GitHub = .userProfile("ashfurrow")
-                        provider.reactive.request(target).startWithResult { result in
-                            if case .success(let response) = result {
-                                message = String(data: response.data, encoding: String.Encoding.utf8)
-                                done()
-                            }
-                        }
-                    }
-
-                    expect(message) == userMessage
                 }
             }
         }

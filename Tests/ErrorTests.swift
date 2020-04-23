@@ -1,7 +1,8 @@
 import Quick
 import Nimble
-@testable
-import Moya
+import XCTest
+
+@testable import Moya
 
 final class ErrorTests: QuickSpec {
     override func spec() {
@@ -241,7 +242,6 @@ final class ErrorTests: QuickSpec {
                     default:
                         XCTFail("expected to get underlying error")
                     }
-
                 case .success:
                     XCTFail("expected to be failing result")
                 }
